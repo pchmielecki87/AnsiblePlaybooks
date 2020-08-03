@@ -1,0 +1,87 @@
+- hosts: all
+ become: yes
+ tasks:
+   - name: Check distro
+     shell: "echo $(lsb_release -cs)"
+     register: distro_version
+
+   - name: Add apt repo gpg key
+     apt_key:
+       id: 0EBFCD88
+       url: https://download.docker.com/linux/ubuntu/gpg
+       state: present
+
+   - name: Add docker repository
+     apt_repository:
+       repo: deb [arch=amd64] https://download.docker.com/linux/ubuntu bionic stable
+
+   - name: Ensure package lists are up to date
+     apt:
+       update_cache: truep@$$worD
+
+   - name: Install docker.
+     apt:
+       pkg:
+         - docker-ce
+       state: latest
+     register: docker_installation
+
+
+   - name: Install pip.
+     apt:
+       pkg:
+         - python-pip
+       state: latest
+
+   - name: Install docker-compose
+     get_url:
+       url: https://github.com/docker/compose/releases/download/1.18.0/docker-compose-Linux-{{ansible_architecture}}
+       dest: /usr/local/bin/docker-compose   
+
+   - name: Add dev user to docker group
+     user:
+       name: dev
+       group: docker
+
+   - name: Ensure docker-compose is executable
+     file:
+       path: /usr/local/bin/docker-compose
+       mode: 0755
+
+   - name: Ensure docker modules are installed
+     pip:
+       name:
+         - docker
+         - docker-compose
+
+   - name: Run wordpress containers
+     docker_service:
+       project_name: wordpress
+       restarted: true
+       definition:
+         version: '3.3'
+         services:
+           db:
+             image: mariadb:10.2
+             volumes:
+               - db_data:/var/lib/mysql
+             restart: always
+             environment:
+               MYSQL_ROOT_PASSWORD: R00+pa$$w0rd
+               MYSQL_DATABASE: wordpress
+               MYSQL_USER: wordpress
+               MYSQL_PASSWORD: p@$$worD
+          
+           wordpress:
+             depends_on:
+               - db
+             image: wordpress:latest
+             ports:
+               - "80:80"
+             restart: always
+             environment:
+               WORDPRESS_DB_HOST: db:3306
+               WORDPRESS_DB_USER: wordpress
+               WORDPRESS_DB_PASSWORD: p@$$worD
+         volumes:
+           db_data: {} 
