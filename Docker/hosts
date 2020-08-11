@@ -1,0 +1,11 @@
+[all]
+cranky_hawking ansible_connection=docker
+#sharp_nightingale ansible_connection=docker
+
+#[docker-nodes]
+#container-name ansible_connection=docker ansible_docker_extra_args="-H tcp://1.2.3.4:1337"
+#172.17.0.2
+
+[webserver:vars]
+ansible_python_interpreter=/usr/bin/python3
+
